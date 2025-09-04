@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Reminder & Event Manager</title>
+  <style>
+    :root{
+      --bg:#0b0f18;
+      --bg-grad: radial-gradient(1200px 800px at 80% -10%, #33415522, transparent 50%),
+                 radial-gradient(900px 600px at -10% 110%, #0ea5e955, transparent 60%),
+                 linear-gradient(180deg,#0b0f18 0%, #0b1220 100%);
+      --card:#111827;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#22d3ee;
+      --accent-2:#60a5fa;
+      --glass: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 10px 30px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background: var(--bg-grad);
+      perspective: 1200px;
+      overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+
+    /* ---- Navigation ---- */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px clamp(16px,4vw,48px);
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(12,18,32,.8), rgba(12,18,32,.35));
+      border-bottom:1px solid var(--border);
+    }
+    .brand{display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.3px}
+    .brand .cube{width:28px;height:28px; position:relative; transform-style:preserve-3d; animation:cuberotate 10s linear infinite}
+    .brand .cube span{position:absolute; inset:0; background:linear-gradient(135deg, var(--accent), var(--accent-2)); opacity:.95; border:1px solid #ffffff22}
+    .brand .cube .face1{transform: rotateY(0deg) translateZ(14px)}
+    .brand .cube .face2{transform: rotateY(90deg) translateZ(14px)}
+    .brand .cube .face3{transform: rotateY(180deg) translateZ(14px)}
+    .brand .cube .face4{transform: rotateY(270deg) translateZ(14px)}
+    .brand .cube .face5{transform: rotateX(90deg) translateZ(14px)}
+    .brand .cube .face6{transform: rotateX(-90deg) translateZ(14px)}
+    @keyframes cuberotate{to{transform: rotateX(360deg) rotateY(360deg)}}
+
+    .links{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      border:1px solid var(--border); padding:8px 12px; border-radius:10px; color:var(--text);
+      background:var(--glass); transition: transform .2s ease, background .2s ease, border-color .2s ease;
+      text-transform: capitalize; font-weight:600; letter-spacing:.2px;
+    }
+    .tab:hover{transform: translateZ(8px) translateY(-2px); background:#ffffff14}
+    .tab.active{border-color: #22d3ee88; box-shadow: 0 0 0 2px #22d3ee22 inset}
+
+    /* ---- Layout ---- */
+    main{padding: clamp(18px, 3vw, 40px); max-width: 1200px; margin: 0 auto}
+    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap: 18px}
+
+    /* ---- 3D Cards ---- */
+    .card{
+      grid-column: span 12;
+      background: linear-gradient(180deg, #0b1324aa, #0b1426aa);
+      border:1px solid var(--border);
+      border-radius: 18px; padding: 20px; box-shadow: var(--shadow);
+      transform-style: preserve-3d; transform: rotateX(0) rotateY(0) translateZ(0);
+      transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
+      position:relative; overflow:hidden;
+    }
+    @media(min-width:900px){
+      .card.span-6{grid-column: span 6}
+      .card.span-4{grid-column: span 4}
+      .card.span-8{grid-column: span 8}
+    }
+    .card:hover{transform: translateZ(18px) rotateX(.8deg) rotateY(-.8deg); box-shadow: 0 20px 45px rgba(0,0,0,.45)}
+    .card h2{margin:0 0 10px; font-size: clamp(1.1rem, 1.2rem + .5vw, 1.8rem)}
+    .muted{color:var(--muted)}
+
+    /* Accent ring */
+    .ring::after{
+      content:""; position:absolute; inset:-1px; border-radius:18px; pointer-events:none;
+      background: conic-gradient(from 0deg, transparent 20%, #22d3ee44, transparent 60%, #60a5fa33);
+      filter: blur(20px); opacity:.35; transform: translateZ(-1px);
+    }
+
+    /* Forms */
+    .row{display:grid; grid-template-columns:1fr; gap:12px}
+    @media(min-width:700px){.row{grid-template-columns:repeat(2,1fr)}}
+    label{font-size:.9rem; color:#cbd5e1}
+    input,select,textarea{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border);
+      background:#0b1220; color:var(--text); outline:none; transition:border-color .2s ease;
+    }
+    input:focus,select:focus,textarea:focus{border-color:#22d3ee80}
+    button{
+      appearance:none; border:1px solid #22d3ee66; background:linear-gradient(135deg, #22d3ee33, #60a5fa33);
+      color:var(--text); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; 
+      transform: translateZ(0); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      box-shadow: 0 4px 16px rgba(34,211,238,.15);
+    }
+    button:hover{transform: translateZ(10px) translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.45)}
+
+    /* Sections routing */
+    section{display:none}
+    section.active{display:block}
+
+    /* 3D showcase hero */
+    .hero{display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; align-items:center}
+    @media(max-width:900px){.hero{grid-template-columns:1fr}}
+    .stage{height:320px; position:relative; transform-style:preserve-3d; perspective:1000px}
+    .floating{
+      position:absolute; inset:0; transform-style:preserve-3d; animation: float 8s ease-in-out infinite;
+    }
+    @keyframes float{ 0%,100%{ transform: translateZ(30px) rotateX(8deg) rotateY(-10deg)} 50%{ transform: translateZ(60px) rotateX(-4deg) rotateY(6deg)} }
+    .chip{
+      position:absolute; width:160px; height:100px; border-radius:16px; border:1px solid var(--border);
+      background:linear-gradient(180deg,#0ea5e922,#22d3ee15);
+      box-shadow: var(--shadow); transform-style:preserve-3d;
+    }
+    .chip:nth-child(1){left:10%; top:8%; transform: translateZ(60px) rotateY(-10deg) rotateX(6deg)}
+    .chip:nth-child(2){right:8%; top:30%; transform: translateZ(40px) rotateY(12deg) rotateX(-4deg)}
+    .chip:nth-child(3){left:18%; bottom:6%; transform: translateZ(20px) rotateY(-4deg)}
+
+    .bullet{display:flex; gap:10px; align-items:flex-start; margin:8px 0}
+    .dot{width:10px; height:10px; border-radius:999px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); margin-top:6px}
+
+    footer{padding:40px; text-align:center; color:#93c5fd66}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">
+      <div class="cube" aria-hidden="true">
+        <span class="face1"></span><span class="face2"></span><span class="face3"></span>
+        <span class="face4"></span><span class="face5"></span><span class="face6"></span>
+      </div>
+      <span>Remind<span style="color:var(--accent)">XR</span></span>
+    </div>
+    <div class="links" role="tablist" aria-label="Sections">
+      <a href="#home" class="tab active" data-route="home" role="tab" aria-selected="true">home</a>
+      <a href="#users" class="tab" data-route="users" role="tab">users</a>
+      <a href="#events" class="tab" data-route="events" role="tab">events</a>
+      <a href="#reminders" class="tab" data-route="reminders" role="tab">reminders</a>
+      <a href="#notifications" class="tab" data-route="notifications" role="tab">notifications</a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="active" aria-labelledby="home-title">
+      <div class="grid">
+        <div class="card span-8 ring hero" role="region" aria-label="3D overview">
+          <div>
+            <h1 id="home-title" style="margin:.2rem 0 8px; font-size: clamp(1.6rem, 2.2rem + 1vw, 3rem)">Your 3D Reminder & Event Hub</h1>
+            <p class="muted">Manage users, create events, send reminders, and track notifications — all in a single immersive interface.</p>
+            <div class="bullet"><div class="dot"></div><div>Clean, responsive layout with subtle 3D motion.</div></div>
+            <div class="bullet"><div class="dot"></div><div>Modular sections that mirror your requirements.</div></div>
+            <div class="bullet"><div class="dot"></div><div>Accessible forms and keyboard‑friendly navigation.</div></div>
+          </div>
+          <div class="stage" aria-hidden="true">
+            <div class="floating">
+              <div class="chip" style="display:grid; place-items:center; font-weight:700">Users</div>
+              <div class="chip" style="display:grid; place-items:center; font-weight:700">Events</div>
+              <div class="chip" style="display:grid; place-items:center; font-weight:700">Reminders</div>
+            </div>
+          </div>
+        </div>
+        <div class="card span-4 ring">
+          <h2>Quick Start</h2>
+          <ol class="muted" style="line-height:1.6">
+            <li>Open <strong>Users</strong> to add or login.</li>
+            <li>Create an <strong>Event</strong> with date & recipient.</li>
+            <li>Setup <strong>Reminders</strong> (starts 7 days prior).</li>
+            <li>Review the <strong>Notification Log</strong>.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section id="users" aria-labelledby="users-title">
+      <div class="grid">
+        <!-- REGISTER -->
+        <div class="card span-6 ring">
+          <h2 id="users-title">Register</h2>
+          <p class="muted">Register new users to manage events.</p>
+          <form class="row" onsubmit="registerUser(); return false;">
+            <div>
+              <label for="reg-name">Name</label>
+              <input id="reg-name" placeholder="Jane Doe" required />
+            </div>
+            <div>
+              <label for="reg-email">Email</label>
+              <input id="reg-email" type="email" placeholder="jane@email.com" required />
+            </div>
+            <div>
+              <label for="reg-password">Password</label>
+              <input id="reg-password" type="password" placeholder="••••••••" required />
+            </div>
+            <div style="align-self:end">
+              <button type="submit">Register User</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LOGIN -->
+        <div class="card span-6 ring">
+          <h2>Login</h2>
+          <p class="muted">Login with your registered email and password.</p>
+          <form class="row" onsubmit="loginUser(); return false;">
+            <div>
+              <label for="login-email">Email</label>
+              <input id="login-email" type="email" placeholder="jane@email.com" required />
+            </div>
+            <div>
+              <label for="login-password">Password</label>
+              <input id="login-password" type="password" placeholder="••••••••" required />
+            </div>
+            <div style="align-self:end">
+              <button type="submit">Login</button>
+            </div>
+          </form>
+          <p id="login-msg" class="muted" style="margin-top:8px"></p>
+        </div>
+      </div>
+      <div class="grid" style="margin-top:20px">
+        <div class="card span-12">
+          <h2>Users (demo data)</h2>
+          <ul id="user-list" class="muted" style="line-height:1.8; padding-left:18px"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="events" aria-labelledby="events-title">
+      <div class="grid">
+        <div class="card span-8 ring">
+          <h2 id="events-title">Event Management (CRUD)</h2>
+          <p class="muted">Create birthdays, anniversaries, or custom dates. Update or delete when needed.</p>
+          <form class="row" onsubmit="addEvent(); return false;">
+            <div>
+              <label for="evt-title">Title</label>
+              <input id="evt-title" placeholder="Mom's Birthday" required />
+            </div>
+            <div>
+              <label for="evt-date">Date</label>
+              <input id="evt-date" type="date" required />
+            </div>
+            <div>
+              <label for="evt-recipient">Recipient</label>
+              <input id="evt-recipient" placeholder="mom@example.com" />
+            </div>
+            <div>
+              <label for="evt-message">Message</label>
+              <input id="evt-message" placeholder="Happy Birthday! 🎉" />
+            </div>
+            <div style="align-self:end">
+              <button type="submit">Create Event</button>
+            </div>
+          </form>
+        </div>
+        <div class="card span-4">
+          <h2>Upcoming & Past</h2>
+          <div id="event-list" class="muted" style="display:grid; gap:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REMINDERS -->
+    <section id="reminders" aria-labelledby="reminders-title">
+      <div class="grid">
+        <div class="card span-6 ring">
+          <h2 id="reminders-title">Reminder System</h2>
+          <p class="muted">System starts reminders 7 days before each event. Daily reminders stop once acknowledged.</p>
+          <form class="row" onsubmit="scheduleReminder(); return false;">
+            <div>
+              <label for="rem-event">Event</label>
+              <select id="rem-event"></select>
+            </div>
+            <div>
+              <label for="rem-lead">Lead Days</label>
+              <input id="rem-lead" type="number" value="7" min="1" max="30" />
+            </div>
+            <div style="align-self:end"><button type="submit">Schedule Reminders</button></div>
+          </form>
+        </div>
+        <div class="card span-6">
+          <h2>Active Reminders</h2>
+          <div id="reminder-list" class="muted" style="display:grid; gap:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section id="notifications" aria-labelledby="noti-title">
+      <div class="grid">
+        <div class="card span-12 ring">
+          <h2 id="noti-title">Notification Log</h2>
+          <p class="muted">Track status: <em>pending</em>, <em>sent</em>, <em>acknowledged</em>, or <em>auto sent</em>.</p>
+          <div id="log" class="muted" style="display:grid; gap:8px"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Built as a demo SPA. Replace demo storage with your backend when ready.
+  </footer>
+
+  <script>
+    // --- Demo store ---
+    const store = { users:[{name:"Demo User", email:"demo@site.com", password:"demo"}], events:[], reminders:[], log:[] };
+
+    const userList = document.getElementById('user-list');
+    const eventList = document.getElementById('event-list');
+    const remEventSel = document.getElementById('rem-event');
+    const reminderList = document.getElementById('reminder-list');
+    const logView = document.getElementById('log');
+    const loginMsg = document.getElementById('login-msg');
+
+    function renderUsers(){
+      userList.innerHTML = store.users.map(u=><li><strong>${u.name}</strong> — ${u.email}</li>).join('');
+    }
+
+    function renderEvents(){
+      eventList.innerHTML = store.events.length ? '' : '<span>No events yet.</span>';
+      store.events.forEach((e,i)=>{
+        const when = new Date(e.date).toLocaleDateString();
+        const soon = new Date(e.date) - Date.now();
+        const status = soon>0 ? 'upcoming' : 'past';
+        const card = document.createElement('div');
+        card.className = 'mini card'; card.style.padding='14px';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
+            <div>
+              <div style="font-weight:700">${e.title}</div>
+              <div class="muted" style="font-size:.9rem">${when} • ${status}</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button onclick="editEvent(${i})">Update</button>
+              <button onclick="deleteEvent(${i})">Delete</button>
+            </div>
+          </div>`;
+        eventList.appendChild(card);
+      });
+      remEventSel.innerHTML = store.events.map((e,i)=><option value="${i}">${e.title} (${new Date(e.date).toLocaleDateString()})</option>).join('');
+    }
+
+    function renderReminders(){
+      reminderList.innerHTML = store.reminders.length ? '' : '<span>No active reminders.</span>';
+      store.reminders.forEach((r,i)=>{
+        const e = store.events[r.eventIndex];
+        const start = new Date(new Date(e.date) - r.leadDays*24*60*60*1000).toLocaleDateString();
+        const row = document.createElement('div'); row.className='card'; row.style.padding='14px';
+        row.innerHTML = `<div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
+          <div><div><strong>${e.title}</strong> reminders start <strong>${start}</strong> (lead ${r.leadDays}d)</div>
+          <div class="muted" style="font-size:.9rem">Daily until acknowledged.</div></div>
+          <div style="display:flex; gap:8px">
+            <button onclick="acknowledge(${i})">Acknowledge</button>
+            <button onclick="removeReminder(${i})">Remove</button>
+          </div>
+        </div>`;
+        reminderList.appendChild(row);
+      });
+    }
+
+    function renderLog(){
+      logView.innerHTML = store.log.map(l=><div class="card" style="padding:12px"><div><strong>${l.type}</strong> — ${l.message}</div><div class="muted" style="font-size:.85rem">${new Date(l.time).toLocaleString()}</div></div>).join('');
+    }
+
+    // --- User actions ---
+    function registerUser(){
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      if(store.users.some(u=>u.email===email)){ alert('Email already registered!'); return; }
+      store.users.push({name,email,password});
+      store.log.push({type:'user', message:Registered user: ${name}, time: Date.now()});
+      renderUsers();
+      document.getElementById('reg-name').value='';
+      document.getElementById('reg-email').value='';
+      document.getElementById('reg-password').value='';
+    }
+
+    function loginUser(){
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const user = store.users.find(u=>u.email===email && u.password===password);
+      if(user){ loginMsg.textContent = ✅ Welcome back, ${user.name}!;
+        store.log.push({type:'login', message:User logged in: ${user.name}, time: Date.now()});
+      } else { loginMsg.textContent = '❌ Invalid email or password.'; }
+      renderLog();
+    }
+
+    // --- Event actions ---
+    function addEvent(){
+      const title = document.getElementById('evt-title').value.trim();
+      const date = document.getElementById('evt-date').value;
+      const recipient = document.getElementById('evt-recipient').value.trim();
+      const message = document.getElementById('evt-message').value.trim();
+      if(!title || !date) return;
+      store.events.push({title,date,recipient,message});
+      store.log.push({type:'event', message:Created event: ${title}, time: Date.now()});
+      document.getElementById('evt-title').value='';
+      document.getElementById('evt-date').value='';
+      document.getElementById('evt-recipient').value='';
+      document.getElementById('evt-message').value='';
+      renderEvents(); renderLog();
+      routeTo('reminders');
+    }
+
+    function editEvent(i){
+      const e = store.events[i];
+      const title = prompt('Update title', e.title); if(title===null) return;
+      const date = prompt('Update date (YYYY-MM-DD)', e.date); if(date===null) return;
+      store.events[i] = {...e, title, date};
+      store.log.push({type:'event', message:Updated event: ${title}, time: Date.now()});
+      renderEvents(); renderLog();
+    }
+
+    function deleteEvent(i){
+      const [e] = store.events.splice(i,1);
+      store.log.push({type:'event', message:Deleted event: ${e.title}, time: Date.now()});
+      renderEvents(); renderLog();
+    }
+
+    // --- Reminders ---
+    function scheduleReminder(){
+      if(!store.events.length) return alert('Create an event first.');
+      store.reminders.push({eventIndex:+remEventSel.value, leadDays:+document.getElementById('rem-lead').value||7});
+      const e = store.events[+remEventSel.value];
+      store.log.push({type:'reminder', message:Scheduled reminders for ${e.title}, time: Date.now()});
+      renderReminders(); renderLog();
+    }
+    function acknowledge(i){
+      const e = store.events[ store.reminders[i].eventIndex ];
+      store.log.push({type:'ack', message:Acknowledged reminders for ${e.title}, time: Date.now()});
+      store.reminders.splice(i,1);
+      renderReminders(); renderLog();
+    }
+    function removeReminder(i){
+      const e = store.events[ store.reminders[i].eventIndex ];
+      store.log.push({type:'reminder', message:Removed reminders for ${e.title}, time: Date.now()});
+      store.reminders.splice(i,1);
+      renderReminders(); renderLog();
+    }
+
+    // --- SPA Router ---
+    const tabs = document.querySelectorAll('.tab');
+    const sections = [...document.querySelectorAll('main section')];
+    tabs.forEach(t=>t.addEventListener('click', e=>{ e.preventDefault(); routeTo(t.dataset.route); }));
+
+    function routeTo(name){
+      tabs.forEach(t=>t.classList.toggle('active', t.dataset.route===name));
+      sections.forEach(s=>s.classList.toggle('active', s.id===name));
+      history.replaceState({}, '', #${name});
+      const target = document.getElementById(name);
+      const h = target.querySelector('h1, h2'); if(h) h.setAttribute('tabindex','-1'), h.focus({preventScroll:true});
+    }
+
+    // --- Hydrate ---
+    renderUsers(); renderEvents(); renderReminders(); renderLog();
+    const initial = location.hash?.replace('#','') || 'home';
+    if(initial!=='home') routeTo(initial);
+  </script>
+</body>
+</html>
