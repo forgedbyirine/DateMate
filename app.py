@@ -13,10 +13,10 @@ import atexit
 # --- 2. App Setup ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'a_super_secret_key_change_this'
-CORS(app) 
+# THE CHANGE IS HERE: We are explicitly allowing your frontend's address
+CORS(app, origins=["http://127.0.0.1:5500"], supports_credentials=True) 
 
-# --- NEW: EMAIL CONFIGURATION (Using Mailtrap for Easy Testing) ---
-# Go to mailtrap.io, sign up for a free account, and get your credentials from the SMTP Settings.
+# --- EMAIL CONFIGURATION (Using Mailtrap) ---
 app.config['MAIL_SERVER'] = 'sandbox.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 2525
 app.config['MAIL_USE_TLS'] = True
@@ -31,34 +31,18 @@ mail = Mail(app)
 init_db(app)
 
 
-# --- 4. Notification Logic (The Core of the New Feature) ---
+# --- 4. Notification Logic ---
 
 def send_reminder_emails():
-    """
-    This function is run by the scheduler. It finds reminders due in 7 days
-    and sends an email to the user.
-    """
     print(f"[{datetime.now()}] Running scheduled job: Checking for reminders...")
-    
-    # Use app_context to be able to access the database connection
     with app.app_context():
-        # Calculate the date for exactly 7 days from now
         target_date = datetime.now().date() + timedelta(days=7)
-        
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        
-        # This SQL query is the key. It joins reminders and users tables.
         query = """
-            SELECT 
-                u.username, 
-                u.email, 
-                r.title, 
-                r.due_date
-            FROM reminders r
-            JOIN users u ON r.user_id = u.id
+            SELECT u.username, u.email, r.title, r.due_date
+            FROM reminders r JOIN users u ON r.user_id = u.id
             WHERE DATE(r.due_date) = %s
         """
-        
         cursor.execute(query, (target_date,))
         reminders_due = cursor.fetchall()
         cursor.close()
@@ -76,7 +60,6 @@ def send_reminder_emails():
                     recipients=[reminder['email']]
                 )
                 msg.body = f"Hi {reminder['username']},\n\nThis is a friendly reminder that your event '{reminder['title']}' is due next week on {reminder['due_date'].strftime('%A, %B %d, %Y')}.\n\nBest,\nThe DateMate Team"
-                
                 mail.send(msg)
                 print(f"Successfully sent email to {reminder['email']} for reminder '{reminder['title']}'.")
             except Exception as e:
@@ -85,11 +68,9 @@ def send_reminder_emails():
 
 # --- 5. Scheduler Setup ---
 scheduler = BackgroundScheduler(daemon=True)
-# THE CHANGE IS HERE: The scheduler is now set to run once per day at 8 AM.
-scheduler.add_job(send_reminder_emails, 'interval', days=1, start_date=datetime.now().replace(hour=8, minute=0, second=0))
+# The scheduler is set to run every 5 minutes.
+scheduler.add_job(send_reminder_emails, 'interval', minutes=5)
 scheduler.start()
-
-# Shut down the scheduler when exiting the app
 atexit.register(lambda: scheduler.shutdown())
 
 
@@ -97,6 +78,7 @@ atexit.register(lambda: scheduler.shutdown())
 @app.route("/health")
 def health():
     return {"status": "ok"}
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -243,6 +225,5 @@ def delete_reminder(reminder_id):
 
 # --- 8. Run the App ---
 if __name__ == "__main__":
-    # use_reloader=False prevents the scheduler from running twice in debug mode.
     app.run(debug=True, use_reloader=False)
 

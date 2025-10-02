@@ -3,471 +3,491 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>3D Reminder & Event Manager</title>
+  <title>DateMate | Reminder & Event Manager</title>
   <style>
-    :root{
-      --bg:#0b0f18;
-      --bg-grad: radial-gradient(1200px 800px at 80% -10%, #33415522, transparent 50%),
-                 radial-gradient(900px 600px at -10% 110%, #0ea5e955, transparent 60%),
-                 linear-gradient(180deg,#0b0f18 0%, #0b1220 100%);
-      --card:#111827;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --accent:#22d3ee;
-      --accent-2:#60a5fa;
-      --glass: rgba(255,255,255,.06);
-      --border: rgba(255,255,255,.12);
-      --shadow: 0 10px 30px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.25);
+    :root {
+      --bg: #0b0f18;
+      --bg-grad: linear-gradient(180deg, #0b0f18 0%, #0b1220 100%),
+        radial-gradient(1200px 800px at 80% -10%, #33415522, transparent 50%),
+        radial-gradient(900px 600px at -10% 110%, #0ea5e955, transparent 60%);
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --accent-2: #60a5fa;
+      --glow: #e0f2fe;
+      --glass: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
+      --hover-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-2);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text);
-      background: var(--bg-grad);
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; overflow-x: hidden; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: var(--bg-grad), radial-gradient(100% 100% at 50% 10%, #60a5fa33, transparent), radial-gradient(100% 100% at 50% 90%, #22d3ee33, transparent);
+      background-attachment: fixed;
       perspective: 1200px;
-      overflow-x:hidden;
     }
-    a{color:inherit;text-decoration:none}
+    
+    .hidden { display: none !important; }
 
-    /* ---- Navigation ---- */
-    .nav{
-      position:sticky; top:0; z-index:50;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px clamp(16px,4vw,48px);
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px clamp(16px, 4vw, 48px);
       backdrop-filter: blur(10px);
-      background: linear-gradient(180deg, rgba(12,18,32,.8), rgba(12,18,32,.35));
-      border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(12, 18, 32, .8), rgba(12, 18, 32, .35));
+      border-bottom: 1px solid var(--border);
     }
-    .brand{display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.3px}
-    .brand .cube{width:28px;height:28px; position:relative; transform-style:preserve-3d; animation:cuberotate 10s linear infinite}
-    .brand .cube span{position:absolute; inset:0; background:linear-gradient(135deg, var(--accent), var(--accent-2)); opacity:.95; border:1px solid #ffffff22}
-    .brand .cube .face1{transform: rotateY(0deg) translateZ(14px)}
-    .brand .cube .face2{transform: rotateY(90deg) translateZ(14px)}
-    .brand .cube .face3{transform: rotateY(180deg) translateZ(14px)}
-    .brand .cube .face4{transform: rotateY(270deg) translateZ(14px)}
-    .brand .cube .face5{transform: rotateX(90deg) translateZ(14px)}
-    .brand .cube .face6{transform: rotateX(-90deg) translateZ(14px)}
-    @keyframes cuberotate{to{transform: rotateX(360deg) rotateY(360deg)}}
 
-    .links{display:flex; gap:8px; flex-wrap:wrap}
-    .tab{
-      border:1px solid var(--border); padding:8px 12px; border-radius:10px; color:var(--text);
-      background:var(--glass); transition: transform .2s ease, background .2s ease, border-color .2s ease;
-      text-transform: capitalize; font-weight:600; letter-spacing:.2px;
+    .brand { display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.3px; }
+    .brand .cube { width:28px; height:28px; position:relative; transform-style:preserve-3d; animation:cuberotate 10s linear infinite; }
+    .brand .cube span { position:absolute; inset:0; background: linear-gradient(135deg, var(--accent), var(--accent-2)); opacity:.95; border:1px solid #ffffff22; }
+    .brand .cube .face1 { transform: rotateY(0deg) translateZ(14px); }
+    .brand .cube .face2 { transform: rotateY(90deg) translateZ(14px); }
+    .brand .cube .face3 { transform: rotateY(180deg) translateZ(14px); }
+    .brand .cube .face4 { transform: rotateY(270deg) translateZ(14px); }
+    .brand .cube .face5 { transform: rotateX(90deg) translateZ(14px); }
+    .brand .cube .face6 { transform: rotateX(-90deg) translateZ(14px); }
+    @keyframes cuberotate {
+      0% { transform: rotateX(0deg) rotateY(0deg); }
+      50% { transform: rotateX(180deg) rotateY(360deg); }
+      100% { transform: rotateX(360deg) rotateY(720deg); }
     }
-    .tab:hover{transform: translateZ(8px) translateY(-2px); background:#ffffff14}
-    .tab.active{border-color: #22d3ee88; box-shadow: 0 0 0 2px #22d3ee22 inset}
 
-    /* ---- Layout ---- */
-    main{padding: clamp(18px, 3vw, 40px); max-width: 1200px; margin: 0 auto}
-    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap: 18px}
+    .nav-links { display:flex; gap:8px; flex-wrap:wrap; }
+    .tab {
+      border: 1px solid var(--border); padding:8px 12px; border-radius:10px;
+      color: var(--text); background: var(--glass);
+      transition: transform .3s ease, background .3s ease, border-color .3s ease;
+      text-transform: capitalize; font-weight:600; letter-spacing:.2px; cursor: pointer;
+    }
+    .tab:hover { transform: translateZ(10px) translateY(-2px); background: #ffffff18; border-color: var(--accent); }
+    .tab.active { border-color: #22d3ee88; box-shadow: 0 0 0 2px #22d3ee22 inset; }
+    
+    .auth-links .tab { background: linear-gradient(135deg,#22d3ee22,#60a5fa22); }
+    
+    main { padding: clamp(18px, 3vw, 40px); max-width:1200px; margin:0 auto; }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:18px; }
 
-    /* ---- 3D Cards ---- */
-    .card{
+    .card {
       grid-column: span 12;
       background: linear-gradient(180deg, #0b1324aa, #0b1426aa);
-      border:1px solid var(--border);
-      border-radius: 18px; padding: 20px; box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.08); border-radius:18px; padding:20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
       transform-style: preserve-3d; transform: rotateX(0) rotateY(0) translateZ(0);
-      transition: transform .35s ease, box-shadow .35s ease, background .35s ease;
-      position:relative; overflow:hidden;
+      transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+      position:relative; overflow:hidden; backdrop-filter: blur(8px);
     }
-    @media(min-width:900px){
-      .card.span-6{grid-column: span 6}
-      .card.span-4{grid-column: span 4}
-      .card.span-8{grid-column: span 8}
+    @media (min-width:900px) {
+      .card.span-6 { grid-column: span 6; }
+      .card.span-4 { grid-column: span 4; }
+      .card.span-8 { grid-column: span 8; }
     }
-    .card:hover{transform: translateZ(18px) rotateX(.8deg) rotateY(-.8deg); box-shadow: 0 20px 45px rgba(0,0,0,.45)}
-    .card h2{margin:0 0 10px; font-size: clamp(1.1rem, 1.2rem + .5vw, 1.8rem)}
-    .muted{color:var(--muted)}
+    .card:hover { transform: translateZ(25px) rotateX(1deg) rotateY(-1deg); box-shadow: var(--hover-shadow); }
+    .card h2 { margin:0 0 10px; font-size: clamp(1.1rem, 1.2rem + .5vw, 1.8rem); }
+    .muted { color: var(--muted); }
 
-    /* Accent ring */
-    .ring::after{
-      content:""; position:absolute; inset:-1px; border-radius:18px; pointer-events:none;
-      background: conic-gradient(from 0deg, transparent 20%, #22d3ee44, transparent 60%, #60a5fa33);
-      filter: blur(20px); opacity:.35; transform: translateZ(-1px);
+    .ring::after {
+      content: ""; position: absolute; inset:-2px; border-radius:18px; pointer-events:none;
+      background: conic-gradient(from 0deg, transparent 10%, var(--accent-2), var(--accent), transparent 80%);
+      filter: blur(15px) opacity(0.5); transition: filter 0.4s ease;
     }
+    .card:hover .ring::after { filter: blur(25px) opacity(0.8); }
 
-    /* Forms */
-    .row{display:grid; grid-template-columns:1fr; gap:12px}
-    @media(min-width:700px){.row{grid-template-columns:repeat(2,1fr)}}
-    label{font-size:.9rem; color:#cbd5e1}
-    input,select,textarea{
+    .row { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width:700px) { .row { grid-template-columns: repeat(2, 1fr); } }
+
+    label { font-size:.9rem; color:#cbd5e1; display:block; margin-bottom:4px; }
+    input, select, textarea {
       width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border);
-      background:#0b1220; color:var(--text); outline:none; transition:border-color .2s ease;
+      background:#0b1220; color:var(--text); outline:none; transition:border-color .2s ease; font-size: 1rem;
     }
-    input:focus,select:focus,textarea:focus{border-color:#22d3ee80}
-    button{
-      appearance:none; border:1px solid #22d3ee66; background:linear-gradient(135deg, #22d3ee33, #60a5fa33);
-      color:var(--text); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; 
-      transform: translateZ(0); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-      box-shadow: 0 4px 16px rgba(34,211,238,.15);
+    input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow: 0 0 0 2px rgba(34,211,238,0.25); }
+
+    button {
+      appearance:none; border:1px solid #22d3ee66; background: linear-gradient(135deg,#22d3ee33,#60a5fa33);
+      color:var(--text); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
+      transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; box-shadow: 0 4px 16px rgba(34,211,238,.15);
     }
-    button:hover{transform: translateZ(10px) translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.45)}
+    button:hover { transform: translateZ(12px) translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.5); background: linear-gradient(135deg,#22d3ee44,#60a5fa55); }
+    button:active { transform: translateZ(8px); }
 
-    /* Sections routing */
-    section{display:none}
-    section.active{display:block}
+    section { display:none; }
+    section.active { display:block; animation: fadeIn 0.6s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* 3D showcase hero */
-    .hero{display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; align-items:center}
-    @media(max-width:900px){.hero{grid-template-columns:1fr}}
-    .stage{height:320px; position:relative; transform-style:preserve-3d; perspective:1000px}
-    .floating{
-      position:absolute; inset:0; transform-style:preserve-3d; animation: float 8s ease-in-out infinite;
+    .hero { display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; align-items:center; }
+    @media (max-width:900px) { .hero { grid-template-columns: 1fr; } }
+    
+    .notification {
+      position: fixed; top: 80px; right: 20px; z-index: 100;
+      padding: 14px 20px; border-radius: 12px;
+      color: var(--text); border: 1px solid;
+      transform: translateX(120%);
+      transition: transform 0.4s ease-in-out;
+      box-shadow: var(--shadow);
     }
-    @keyframes float{ 0%,100%{ transform: translateZ(30px) rotateX(8deg) rotateY(-10deg)} 50%{ transform: translateZ(60px) rotateX(-4deg) rotateY(6deg)} }
-    .chip{
-      position:absolute; width:160px; height:100px; border-radius:16px; border:1px solid var(--border);
-      background:linear-gradient(180deg,#0ea5e922,#22d3ee15);
-      box-shadow: var(--shadow); transform-style:preserve-3d;
-    }
-    .chip:nth-child(1){left:10%; top:8%; transform: translateZ(60px) rotateY(-10deg) rotateX(6deg)}
-    .chip:nth-child(2){right:8%; top:30%; transform: translateZ(40px) rotateY(12deg) rotateX(-4deg)}
-    .chip:nth-child(3){left:18%; bottom:6%; transform: translateZ(20px) rotateY(-4deg)}
+    .notification.show { transform: translateX(0); }
+    .notification.success { background: #10b98133; border-color: #10b981; }
+    .notification.error { background: #ef444433; border-color: #ef4444; }
 
-    .bullet{display:flex; gap:10px; align-items:flex-start; margin:8px 0}
-    .dot{width:10px; height:10px; border-radius:999px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); margin-top:6px}
-
-    footer{padding:40px; text-align:center; color:#93c5fd66}
+    footer { padding:40px; text-align:center; color:#93c5fd66; font-size:.9rem; }
+    .reminders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
   </style>
 </head>
 <body>
+
+  <!-- DYNAMIC NAVIGATION -->
   <nav class="nav">
     <div class="brand">
       <div class="cube" aria-hidden="true">
         <span class="face1"></span><span class="face2"></span><span class="face3"></span>
         <span class="face4"></span><span class="face5"></span><span class="face6"></span>
       </div>
-      <span>Remind<span style="color:var(--accent)">XR</span></span>
+      <span>DATE<span style="color:var(--accent)">MATE</span></span>
     </div>
-    <div class="links" role="tablist" aria-label="Sections">
-      <a href="#home" class="tab active" data-route="home" role="tab" aria-selected="true">home</a>
-      <a href="#users" class="tab" data-route="users" role="tab">users</a>
-      <a href="#events" class="tab" data-route="events" role="tab">events</a>
-      <a href="#reminders" class="tab" data-route="reminders" role="tab">reminders</a>
-      <a href="#notifications" class="tab" data-route="notifications" role="tab">notifications</a>
-    </div>
+    <div id="nav-links-container" class="nav-links" role="tablist"></div>
   </nav>
 
   <main>
-    <!-- HOME -->
-    <section id="home" class="active" aria-labelledby="home-title">
-      <div class="grid">
-        <div class="card span-8 ring hero" role="region" aria-label="3D overview">
+    <!-- WELCOME / HOME VIEW -->
+    <section id="home-view" class="active">
+        <div class="card span-12 ring hero">
           <div>
-            <h1 id="home-title" style="margin:.2rem 0 8px; font-size: clamp(1.6rem, 2.2rem + 1vw, 3rem)">Your 3D Reminder & Event Hub</h1>
-            <p class="muted">Manage users, create events, send reminders, and track notifications — all in a single immersive interface.</p>
-            <div class="bullet"><div class="dot"></div><div>Clean, responsive layout with subtle 3D motion.</div></div>
-            <div class="bullet"><div class="dot"></div><div>Modular sections that mirror your requirements.</div></div>
-            <div class="bullet"><div class="dot"></div><div>Accessible forms and keyboard‑friendly navigation.</div></div>
-          </div>
-          <div class="stage" aria-hidden="true">
-            <div class="floating">
-              <div class="chip" style="display:grid; place-items:center; font-weight:700">Users</div>
-              <div class="chip" style="display:grid; place-items:center; font-weight:700">Events</div>
-              <div class="chip" style="display:grid; place-items:center; font-weight:700">Reminders</div>
-            </div>
+            <h1 style="margin:.2rem 0 8px; font-size: clamp(1.6rem, 2.2rem + 1vw, 3rem)">Your Personal Reminder Hub</h1>
+            <p class="muted">Manage, schedule, and get notified about your important dates, all in one place.</p>
+             <p class="muted" style="margin-top: 1rem;">Please log in or register to get started.</p>
           </div>
         </div>
-        <div class="card span-4 ring">
-          <h2>Quick Start</h2>
-          <ol class="muted" style="line-height:1.6">
-            <li>Open <strong>Users</strong> to add or login.</li>
-            <li>Create an <strong>Event</strong> with date & recipient.</li>
-            <li>Setup <strong>Reminders</strong> (starts 7 days prior).</li>
-            <li>Review the <strong>Notification Log</strong>.</li>
-          </ol>
+    </section>
+    
+    <!-- AUTHENTICATION VIEW -->
+    <section id="auth-view">
+        <div class="grid">
+            <div class="card span-6 ring">
+                <h2>Register</h2>
+                <p class="muted">Create a new account to manage your dates.</p>
+                <form id="register-form" class="row">
+                    <div><label for="reg-username">Username</label><input id="reg-username" placeholder="janedoe" required /></div>
+                    <div><label for="reg-email">Email</label><input id="reg-email" type="email" placeholder="jane@email.com" required /></div>
+                    <div><label for="reg-password">Password</label><input id="reg-password" type="password" placeholder="••••••••" required /></div>
+                    <div style="align-self:end"><button type="submit">Register User</button></div>
+                </form>
+            </div>
+            <div class="card span-6 ring">
+                <h2>Login</h2>
+                <p class="muted">Access your existing account.</p>
+                <form id="login-form" class="row">
+                    <div><label for="login-username">Username</label><input id="login-username" placeholder="janedoe" required /></div>
+                    <div><label for="login-password">Password</label><input id="login-password" type="password" placeholder="••••••••" required /></div>
+                    <div style="align-self:end"><button type="submit">Login</button></div>
+                </form>
+            </div>
         </div>
-      </div>
     </section>
 
-    <!-- USERS -->
-    <section id="users" aria-labelledby="users-title">
-      <div class="grid">
-        <!-- REGISTER -->
-        <div class="card span-6 ring">
-          <h2 id="users-title">Register</h2>
-          <p class="muted">Register new users to manage events.</p>
-          <form class="row" onsubmit="registerUser(); return false;">
-            <div>
-              <label for="reg-name">Name</label>
-              <input id="reg-name" placeholder="Jane Doe" required />
-            </div>
-            <div>
-              <label for="reg-email">Email</label>
-              <input id="reg-email" type="email" placeholder="jane@email.com" required />
-            </div>
-            <div>
-              <label for="reg-password">Password</label>
-              <input id="reg-password" type="password" placeholder="••••••••" required />
-            </div>
-            <div style="align-self:end">
-              <button type="submit">Register User</button>
-            </div>
-          </form>
+    <!-- DASHBOARD VIEW -->
+    <section id="dashboard-view">
+        <div style="margin-bottom: 24px;">
+            <h1 id="welcome-heading" style="font-size: clamp(1.6rem, 2rem + 1vw, 2.5rem); margin: 0;"></h1>
+            <p class="muted">Here are your scheduled reminders. Add, edit, or remove them as you wish.</p>
         </div>
-
-        <!-- LOGIN -->
-        <div class="card span-6 ring">
-          <h2>Login</h2>
-          <p class="muted">Login with your registered email and password.</p>
-          <form class="row" onsubmit="loginUser(); return false;">
-            <div>
-              <label for="login-email">Email</label>
-              <input id="login-email" type="email" placeholder="jane@email.com" required />
-            </div>
-            <div>
-              <label for="login-password">Password</label>
-              <input id="login-password" type="password" placeholder="••••••••" required />
-            </div>
-            <div style="align-self:end">
-              <button type="submit">Login</button>
-            </div>
-          </form>
-          <p id="login-msg" class="muted" style="margin-top:8px"></p>
+        <div class="reminders-grid" id="reminders-list">
+            <!-- Reminders will be injected here -->
         </div>
-      </div>
-      <div class="grid" style="margin-top:20px">
-        <div class="card span-12">
-          <h2>Users (demo data)</h2>
-          <ul id="user-list" class="muted" style="line-height:1.8; padding-left:18px"></ul>
+        <div class="card hidden" id="no-reminders-card">
+            <h2>No reminders yet!</h2>
+            <p class="muted">Click the "Add Reminder" button to create your first one.</p>
         </div>
-      </div>
-    </section>
-
-    <!-- EVENTS -->
-    <section id="events" aria-labelledby="events-title">
-      <div class="grid">
-        <div class="card span-8 ring">
-          <h2 id="events-title">Event Management (CRUD)</h2>
-          <p class="muted">Create birthdays, anniversaries, or custom dates. Update or delete when needed.</p>
-          <form class="row" onsubmit="addEvent(); return false;">
-            <div>
-              <label for="evt-title">Title</label>
-              <input id="evt-title" placeholder="Mom's Birthday" required />
-            </div>
-            <div>
-              <label for="evt-date">Date</label>
-              <input id="evt-date" type="date" required />
-            </div>
-            <div>
-              <label for="evt-recipient">Recipient</label>
-              <input id="evt-recipient" placeholder="mom@example.com" />
-            </div>
-            <div>
-              <label for="evt-message">Message</label>
-              <input id="evt-message" placeholder="Happy Birthday! 🎉" />
-            </div>
-            <div style="align-self:end">
-              <button type="submit">Create Event</button>
-            </div>
-          </form>
-        </div>
-        <div class="card span-4">
-          <h2>Upcoming & Past</h2>
-          <div id="event-list" class="muted" style="display:grid; gap:10px"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- REMINDERS -->
-    <section id="reminders" aria-labelledby="reminders-title">
-      <div class="grid">
-        <div class="card span-6 ring">
-          <h2 id="reminders-title">Reminder System</h2>
-          <p class="muted">System starts reminders 7 days before each event. Daily reminders stop once acknowledged.</p>
-          <form class="row" onsubmit="scheduleReminder(); return false;">
-            <div>
-              <label for="rem-event">Event</label>
-              <select id="rem-event"></select>
-            </div>
-            <div>
-              <label for="rem-lead">Lead Days</label>
-              <input id="rem-lead" type="number" value="7" min="1" max="30" />
-            </div>
-            <div style="align-self:end"><button type="submit">Schedule Reminders</button></div>
-          </form>
-        </div>
-        <div class="card span-6">
-          <h2>Active Reminders</h2>
-          <div id="reminder-list" class="muted" style="display:grid; gap:10px"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- NOTIFICATIONS -->
-    <section id="notifications" aria-labelledby="noti-title">
-      <div class="grid">
-        <div class="card span-12 ring">
-          <h2 id="noti-title">Notification Log</h2>
-          <p class="muted">Track status: <em>pending</em>, <em>sent</em>, <em>acknowledged</em>, or <em>auto sent</em>.</p>
-          <div id="log" class="muted" style="display:grid; gap:8px"></div>
-        </div>
-      </div>
     </section>
   </main>
 
   <footer>
-    Built as a demo SPA. Replace demo storage with your backend when ready.
+    DATEMATE &copy; 2025
   </footer>
+  
+  <div id="notification-element"></div>
 
   <script>
-    // --- Demo store ---
-    const store = { users:[{name:"Demo User", email:"demo@site.com", password:"demo"}], events:[], reminders:[], log:[] };
+    const API_BASE_URL = 'http://127.0.0.1:5000';
 
-    const userList = document.getElementById('user-list');
-    const eventList = document.getElementById('event-list');
-    const remEventSel = document.getElementById('rem-event');
-    const reminderList = document.getElementById('reminder-list');
-    const logView = document.getElementById('log');
-    const loginMsg = document.getElementById('login-msg');
+    // --- STATE MANAGEMENT ---
+    let state = {
+        currentUser: null,
+        reminders: [],
+        currentView: 'home'
+    };
+    
+    // --- DOM ELEMENTS ---
+    const navLinksContainer = document.getElementById('nav-links-container');
+    const sections = document.querySelectorAll('main section');
+    const notificationElement = document.getElementById('notification-element');
+    
+    // Auth elements
+    const registerForm = document.getElementById('register-form');
+    const loginForm = document.getElementById('login-form');
+    const welcomeHeading = document.getElementById('welcome-heading');
 
-    function renderUsers(){
-      userList.innerHTML = store.users.map(u=><li><strong>${u.name}</strong> — ${u.email}</li>).join('');
+    // Reminder elements
+    const remindersList = document.getElementById('reminders-list');
+    const noRemindersCard = document.getElementById('no-reminders-card');
+
+    // --- API HELPER ---
+    async function apiRequest(endpoint, method = 'GET', body = null) {
+        const options = { method, headers: {}, credentials: 'include' };
+        if (body) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+            const data = await response.json();
+            if (!response.ok) { throw new Error(data.message || 'An unknown error occurred'); }
+            return data;
+        } catch (error) {
+            showNotification(error.message, true);
+            throw error;
+        }
     }
 
-    function renderEvents(){
-      eventList.innerHTML = store.events.length ? '' : '<span>No events yet.</span>';
-      store.events.forEach((e,i)=>{
-        const when = new Date(e.date).toLocaleDateString();
-        const soon = new Date(e.date) - Date.now();
-        const status = soon>0 ? 'upcoming' : 'past';
-        const card = document.createElement('div');
-        card.className = 'mini card'; card.style.padding='14px';
-        card.innerHTML = `
-          <div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
-            <div>
-              <div style="font-weight:700">${e.title}</div>
-              <div class="muted" style="font-size:.9rem">${when} • ${status}</div>
-            </div>
-            <div style="display:flex; gap:8px">
-              <button onclick="editEvent(${i})">Update</button>
-              <button onclick="deleteEvent(${i})">Delete</button>
-            </div>
-          </div>`;
-        eventList.appendChild(card);
-      });
-      remEventSel.innerHTML = store.events.map((e,i)=><option value="${i}">${e.title} (${new Date(e.date).toLocaleDateString()})</option>).join('');
+    // --- UI & RENDER FUNCTIONS ---
+    function showNotification(message, isError = false) {
+        const notif = document.createElement('div');
+        notif.className = `notification ${isError ? 'error' : 'success'}`;
+        notif.textContent = message;
+        notificationElement.appendChild(notif);
+        setTimeout(() => notif.classList.add('show'), 10);
+        setTimeout(() => {
+            notif.classList.remove('show');
+            setTimeout(() => notif.remove(), 400);
+        }, 3000);
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return 'No due date';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
     }
 
-    function renderReminders(){
-      reminderList.innerHTML = store.reminders.length ? '' : '<span>No active reminders.</span>';
-      store.reminders.forEach((r,i)=>{
-        const e = store.events[r.eventIndex];
-        const start = new Date(new Date(e.date) - r.leadDays*24*60*60*1000).toLocaleDateString();
-        const row = document.createElement('div'); row.className='card'; row.style.padding='14px';
-        row.innerHTML = `<div style="display:flex; justify-content:space-between; gap:10px; align-items:center">
-          <div><div><strong>${e.title}</strong> reminders start <strong>${start}</strong> (lead ${r.leadDays}d)</div>
-          <div class="muted" style="font-size:.9rem">Daily until acknowledged.</div></div>
-          <div style="display:flex; gap:8px">
-            <button onclick="acknowledge(${i})">Acknowledge</button>
-            <button onclick="removeReminder(${i})">Remove</button>
-          </div>
-        </div>`;
-        reminderList.appendChild(row);
-      });
+    function renderNav() {
+        navLinksContainer.innerHTML = '';
+        if (state.currentUser) {
+            // Logged in nav
+            navLinksContainer.innerHTML = `
+                <a href="#dashboard" class="tab" data-route="dashboard-view">Dashboard</a>
+                <a href="#" id="add-reminder-btn" class="tab auth-links">Add Reminder</a>
+                <a href="#" id="logout-btn" class="tab auth-links">Logout</a>
+            `;
+            document.getElementById('add-reminder-btn').addEventListener('click', () => handleAddReminder());
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+        } else {
+            // Logged out nav
+            navLinksContainer.innerHTML = `
+                <a href="#home" class="tab" data-route="home-view">Home</a>
+                <a href="#auth" class="tab auth-links" data-route="auth-view">Login / Register</a>
+            `;
+        }
+        navLinksContainer.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', e => {
+                e.preventDefault();
+                const route = tab.dataset.route;
+                if (route) {
+                    state.currentView = route;
+                    render();
+                }
+            });
+        });
     }
 
-    function renderLog(){
-      logView.innerHTML = store.log.map(l=><div class="card" style="padding:12px"><div><strong>${l.type}</strong> — ${l.message}</div><div class="muted" style="font-size:.85rem">${new Date(l.time).toLocaleString()}</div></div>).join('');
+    function renderReminders() {
+        remindersList.innerHTML = '';
+        if (state.reminders.length === 0) {
+            noRemindersCard.classList.remove('hidden');
+            return;
+        }
+        noRemindersCard.classList.add('hidden');
+        
+        state.reminders.forEach(reminder => {
+            const card = document.createElement('div');
+            card.className = 'card ring';
+            card.innerHTML = `
+                <h2 style="color:var(--accent-2);">${escapeHtml(reminder.title)}</h2>
+                <p class="muted" style="min-height: 40px;">${escapeHtml(reminder.description) || 'No description.'}</p>
+                <p style="font-weight: 600; font-size: 0.9rem;">Due: ${formatDate(reminder.due_date)}</p>
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button data-id="${reminder.id}" class="edit-btn">Edit</button>
+                    <button data-id="${reminder.id}" class="delete-btn" style="background: #ef444433; border-color: #ef444466;">Delete</button>
+                </div>
+            `;
+            card.querySelector('.edit-btn').addEventListener('click', () => handleEditReminder(reminder.id));
+            card.querySelector('.delete-btn').addEventListener('click', () => handleDeleteReminder(reminder.id));
+            remindersList.appendChild(card);
+        });
     }
 
-    // --- User actions ---
-    function registerUser(){
-      const name = document.getElementById('reg-name').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value;
-      if(store.users.some(u=>u.email===email)){ alert('Email already registered!'); return; }
-      store.users.push({name,email,password});
-      store.log.push({type:'user', message:Registered user: ${name}, time: Date.now()});
-      renderUsers();
-      document.getElementById('reg-name').value='';
-      document.getElementById('reg-email').value='';
-      document.getElementById('reg-password').value='';
+    function render() {
+        renderNav();
+        sections.forEach(s => s.classList.remove('active'));
+        const activeSection = document.getElementById(state.currentView);
+        if (activeSection) {
+            activeSection.classList.add('active');
+        }
+
+        if (state.currentView === 'dashboard-view' && state.currentUser) {
+            welcomeHeading.textContent = `Welcome, ${escapeHtml(state.currentUser.username)}`;
+            renderReminders();
+        }
+        
+        // Highlight active tab
+        navLinksContainer.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.route === state.currentView);
+        });
+    }
+    
+    // --- EVENT HANDLERS & LOGIC ---
+    async function handleRegister(e) {
+        e.preventDefault();
+        const username = document.getElementById('reg-username').value;
+        const email = document.getElementById('reg-email').value;
+        const password = document.getElementById('reg-password').value;
+        try {
+            const data = await apiRequest('/register', 'POST', { username, email, password });
+            showNotification(data.message, false);
+            registerForm.reset();
+            state.currentView = 'auth-view'; // stay on auth view to log in
+            render();
+            // Pre-fill login for convenience
+            document.getElementById('login-username').value = username;
+        } catch(err) {}
     }
 
-    function loginUser(){
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      const user = store.users.find(u=>u.email===email && u.password===password);
-      if(user){ loginMsg.textContent = ✅ Welcome back, ${user.name}!;
-        store.log.push({type:'login', message:User logged in: ${user.name}, time: Date.now()});
-      } else { loginMsg.textContent = '❌ Invalid email or password.'; }
-      renderLog();
+    async function handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+        try {
+            await apiRequest('/login', 'POST', { username, password });
+            await initializeApp(true); // pass true to switch view
+        } catch(err) {}
+    }
+    
+    async function handleLogout() {
+        try {
+            await apiRequest('/logout', 'POST');
+            state.currentUser = null;
+            state.reminders = [];
+            state.currentView = 'home-view';
+            showNotification('Logged out successfully.', false);
+            render();
+        } catch (err) {}
+    }
+    
+    function handleAddReminder() {
+        const title = prompt("Enter reminder title:");
+        if (!title) return;
+        const description = prompt("Enter a short description (optional):");
+        const due_date = prompt("Enter due date (YYYY-MM-DD HH:MM:SS):", "2025-12-25 18:00:00");
+        if (!due_date) return;
+        
+        saveReminder({ title, description, due_date });
     }
 
-    // --- Event actions ---
-    function addEvent(){
-      const title = document.getElementById('evt-title').value.trim();
-      const date = document.getElementById('evt-date').value;
-      const recipient = document.getElementById('evt-recipient').value.trim();
-      const message = document.getElementById('evt-message').value.trim();
-      if(!title || !date) return;
-      store.events.push({title,date,recipient,message});
-      store.log.push({type:'event', message:Created event: ${title}, time: Date.now()});
-      document.getElementById('evt-title').value='';
-      document.getElementById('evt-date').value='';
-      document.getElementById('evt-recipient').value='';
-      document.getElementById('evt-message').value='';
-      renderEvents(); renderLog();
-      routeTo('reminders');
+    function handleEditReminder(id) {
+        const reminder = state.reminders.find(r => r.id === id);
+        if (!reminder) return;
+        
+        const title = prompt("Update title:", reminder.title);
+        if (title === null) return;
+        const description = prompt("Update description:", reminder.description);
+        if (description === null) return;
+        const due_date = prompt("Update due date:", new Date(reminder.due_date).toISOString().slice(0, 19).replace('T', ' '));
+        if (due_date === null) return;
+        
+        saveReminder({ title, description, due_date }, id);
+    }
+    
+    async function saveReminder(reminderData, id = null) {
+        try {
+            if (id) {
+                const data = await apiRequest(`/reminders/${id}`, 'PUT', reminderData);
+                showNotification(data.message, false);
+            } else {
+                const data = await apiRequest('/reminders', 'POST', reminderData);
+                showNotification(data.message, false);
+            }
+            await fetchReminders();
+            render();
+        } catch(err) {}
     }
 
-    function editEvent(i){
-      const e = store.events[i];
-      const title = prompt('Update title', e.title); if(title===null) return;
-      const date = prompt('Update date (YYYY-MM-DD)', e.date); if(date===null) return;
-      store.events[i] = {...e, title, date};
-      store.log.push({type:'event', message:Updated event: ${title}, time: Date.now()});
-      renderEvents(); renderLog();
+    async function handleDeleteReminder(id) {
+        if (confirm('Are you sure you want to delete this reminder?')) {
+            try {
+                const data = await apiRequest(`/reminders/${id}`, 'DELETE');
+                showNotification(data.message, false);
+                await fetchReminders();
+                render();
+            } catch(err) {}
+        }
     }
-
-    function deleteEvent(i){
-      const [e] = store.events.splice(i,1);
-      store.log.push({type:'event', message:Deleted event: ${e.title}, time: Date.now()});
-      renderEvents(); renderLog();
+    
+    // --- DATA FETCHING ---
+    async function fetchReminders() {
+        if (!state.currentUser) return;
+        try {
+            const reminders = await apiRequest('/reminders');
+            state.reminders = reminders.sort((a,b) => new Date(a.due_date) - new Date(b.due_date));
+        } catch (err) {
+            state.reminders = [];
+        }
     }
-
-    // --- Reminders ---
-    function scheduleReminder(){
-      if(!store.events.length) return alert('Create an event first.');
-      store.reminders.push({eventIndex:+remEventSel.value, leadDays:+document.getElementById('rem-lead').value||7});
-      const e = store.events[+remEventSel.value];
-      store.log.push({type:'reminder', message:Scheduled reminders for ${e.title}, time: Date.now()});
-      renderReminders(); renderLog();
+    
+    // --- INITIALIZATION ---
+    async function initializeApp(switchToDashboard = false) {
+        try {
+            state.currentUser = await apiRequest('/profile');
+            if (state.currentUser) {
+                await fetchReminders();
+                if (switchToDashboard) {
+                    state.currentView = 'dashboard-view';
+                }
+            }
+        } catch(err) {
+            state.currentUser = null;
+        }
+        
+        const hashRoute = window.location.hash.substring(1);
+        if (!state.currentUser) {
+            state.currentView = (hashRoute === 'auth-view') ? 'auth-view' : 'home-view';
+        } else if (!switchToDashboard) {
+             state.currentView = 'dashboard-view';
+        }
+        
+        render();
     }
-    function acknowledge(i){
-      const e = store.events[ store.reminders[i].eventIndex ];
-      store.log.push({type:'ack', message:Acknowledged reminders for ${e.title}, time: Date.now()});
-      store.reminders.splice(i,1);
-      renderReminders(); renderLog();
+    
+    function escapeHtml(str = '') {
+        return String(str).replace(/[&<>"'`=\/]/g, s => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
+            "'": '&#39;', '/': '&#x2F;', '`': '&#96;', '=': '&#x3D;'
+        }[s] || s));
     }
-    function removeReminder(i){
-      const e = store.events[ store.reminders[i].eventIndex ];
-      store.log.push({type:'reminder', message:Removed reminders for ${e.title}, time: Date.now()});
-      store.reminders.splice(i,1);
-      renderReminders(); renderLog();
-    }
-
-    // --- SPA Router ---
-    const tabs = document.querySelectorAll('.tab');
-    const sections = [...document.querySelectorAll('main section')];
-    tabs.forEach(t=>t.addEventListener('click', e=>{ e.preventDefault(); routeTo(t.dataset.route); }));
-
-    function routeTo(name){
-      tabs.forEach(t=>t.classList.toggle('active', t.dataset.route===name));
-      sections.forEach(s=>s.classList.toggle('active', s.id===name));
-      history.replaceState({}, '', #${name});
-      const target = document.getElementById(name);
-      const h = target.querySelector('h1, h2'); if(h) h.setAttribute('tabindex','-1'), h.focus({preventScroll:true});
-    }
-
-    // --- Hydrate ---
-    renderUsers(); renderEvents(); renderReminders(); renderLog();
-    const initial = location.hash?.replace('#','') || 'home';
-    if(initial!=='home') routeTo(initial);
+    
+    // --- App Start ---
+    document.addEventListener('DOMContentLoaded', () => {
+        registerForm.addEventListener('submit', handleRegister);
+        loginForm.addEventListener('submit', handleLogin);
+        initializeApp();
+    });
   </script>
 </body>
 </html>
+
